@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/samaservice/static/css/main.ca66c3b3.css",
+    "main.js": "/samaservice/static/js/main.29f9b682.js",
+    "index.html": "/samaservice/index.html",
+    "main.ca66c3b3.css.map": "/samaservice/static/css/main.ca66c3b3.css.map",
+    "main.29f9b682.js.map": "/samaservice/static/js/main.29f9b682.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ca66c3b3.css",
+    "static/js/main.29f9b682.js"
+  ]
+}
