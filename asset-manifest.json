@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/samaservice/static/css/main.ca66c3b3.css",
-    "main.js": "/samaservice/static/js/main.29f9b682.js",
+    "main.css": "/samaservice/static/css/main.244892f4.css",
+    "main.js": "/samaservice/static/js/main.80ef3f67.js",
     "index.html": "/samaservice/index.html",
-    "main.ca66c3b3.css.map": "/samaservice/static/css/main.ca66c3b3.css.map",
-    "main.29f9b682.js.map": "/samaservice/static/js/main.29f9b682.js.map"
+    "main.244892f4.css.map": "/samaservice/static/css/main.244892f4.css.map",
+    "main.80ef3f67.js.map": "/samaservice/static/js/main.80ef3f67.js.map"
   },
   "entrypoints": [
-    "static/css/main.ca66c3b3.css",
-    "static/js/main.29f9b682.js"
+    "static/css/main.244892f4.css",
+    "static/js/main.80ef3f67.js"
   ]
 }
