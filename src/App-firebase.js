@@ -1,10 +1,12 @@
 import { useState } from "react";
 
-// ── Auth / Onboarding ─────────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
 import Splash            from "./auth/Splash/Splash";
 import Welcome           from "./auth/Welcome/Welcome";
 import ClientNameInput   from "./auth/ClientNameInput/ClientNameInput";
 import ProviderNameInput from "./auth/ProviderNameInput/ProviderNameInput";
+import PhoneInput        from "./auth/PhoneInput/PhoneInput";
+import OTPInput          from "./auth/OTPInput/OTPInput";
 
 // ── App Client ────────────────────────────────────────────────────────────────
 import Background    from "./Components/Background/Background";
@@ -26,15 +28,19 @@ import ProviderProfile from "./prest/Pages/Profile/Profile";
 
 // ── Flow ──────────────────────────────────────────────────────────────────────
 // splash → welcome
-//            ↓ client      → client-name   → app-client
-//            ↓ prestataire → provider-name → app-prest
+//   → client-name → phone → otp → app-client
+//   → provider-name → phone → otp → app-prest
 
 export default function App() {
   const [step, setStep] = useState("splash");
 
-  // Noms saisis par l'utilisateur
+  // Noms saisis
   const [clientName,   setClientName]   = useState("");
   const [providerName, setProviderName] = useState("");
+  const [phone,        setPhone]        = useState("");
+
+  // Qui est en train de s'authentifier : "client" ou "provider"
+  const [authRole, setAuthRole] = useState("");
 
   // ── Client app state ───────────────────────────────────────────────────────
   const [clientPage,       setClientPage]       = useState("home");
@@ -44,18 +50,49 @@ export default function App() {
 
   // ── Prestataire app state ──────────────────────────────────────────────────
   const [prestPage, setPrestPage] = useState("dashboard");
-  const handleLogout = () => {
-  setClientName("");
-  setProviderName("");
-  setClientPage("home");
-  setPrestPage("dashboard");
-  setFavorites([]);
-  setSelectedProvider(null);
-  setSearchService(null);
-  setStep("welcome");
-};
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── Logout ────────────────────────────────────────────────────────────────
+  const handleLogout = () => {
+    setClientName("");
+    setProviderName("");
+    setPhone("");
+    setAuthRole("");
+    setClientPage("home");
+    setPrestPage("dashboard");
+    setFavorites([]);
+    setSelectedProvider(null);
+    setSearchService(null);
+    setStep("welcome");
+  };
+
+  // ── Auth handlers ──────────────────────────────────────────────────────────
+  const handleClientNameSubmit = (name) => {
+    setClientName(name);
+    setAuthRole("client");
+    setStep("phone");
+  };
+
+  const handleProviderNameSubmit = (name) => {
+    setProviderName(name);
+    setAuthRole("provider");
+    setStep("phone");
+  };
+
+  const handlePhoneSubmit = (fullPhone) => {
+    setPhone(fullPhone);
+    setStep("otp");
+  };
+
+  const handleOTPVerified = () => {
+    // Redirige selon le rôle
+    if (authRole === "client") {
+      setStep("app-client");
+    } else {
+      setStep("app-prest");
+    }
+  };
+
+  // ── Autres handlers ────────────────────────────────────────────────────────
   const handleFavToggle = (id) =>
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
@@ -64,16 +101,6 @@ export default function App() {
   const handleSeeAll = (service) => {
     setSearchService(service);
     setClientPage("search");
-  };
-
-  const handleClientNameSubmit = (name) => {
-    setClientName(name);
-    setStep("app-client");
-  };
-
-  const handleProviderNameSubmit = (name) => {
-    setProviderName(name);
-    setStep("app-prest");
   };
 
   // ── Render client page ─────────────────────────────────────────────────────
@@ -108,7 +135,7 @@ export default function App() {
           />
         );
       case "profile":
-        return <ClientProfile clientName={clientName} onLogout={handleLogout}/>;
+        return <ClientProfile clientName={clientName} onLogout={handleLogout} />;
       default:
         return null;
     }
@@ -119,8 +146,9 @@ export default function App() {
     switch (prestPage) {
       case "dashboard": return <Dashboard providerName={providerName} />;
       case "earnings":  return <Earnings />;
-      case "profile":   return <ProviderProfile providerName={providerName} onLogout={handleLogout}/>;
-      default:          return <Dashboard providerName={providerName} />;
+      case "profile":
+        return <ProviderProfile providerName={providerName} onLogout={handleLogout} />;
+      default: return <Dashboard providerName={providerName} />;
     }
   };
 
@@ -140,7 +168,7 @@ export default function App() {
         <Splash onDone={() => setStep("welcome")} />
       )}
 
-      {/* 2. Welcome — choix client ou prestataire */}
+      {/* 2. Welcome */}
       {step === "welcome" && (
         <Welcome
           onClientStart={() => setStep("client-name")}
@@ -148,7 +176,7 @@ export default function App() {
         />
       )}
 
-      {/* 3a. Client — saisie du nom */}
+      {/* 3a. Saisie nom client */}
       {step === "client-name" && (
         <ClientNameInput
           onBack={() => setStep("welcome")}
@@ -156,7 +184,7 @@ export default function App() {
         />
       )}
 
-      {/* 3b. Prestataire — saisie du nom */}
+      {/* 3b. Saisie nom prestataire */}
       {step === "provider-name" && (
         <ProviderNameInput
           onBack={() => setStep("welcome")}
@@ -164,7 +192,26 @@ export default function App() {
         />
       )}
 
-      {/* 4. App Client */}
+      {/* 4. Saisie téléphone (partagé client + prestataire) */}
+      {step === "phone" && (
+        <PhoneInput
+          onBack={() =>
+            setStep(authRole === "client" ? "client-name" : "provider-name")
+          }
+          onSubmit={handlePhoneSubmit}
+        />
+      )}
+
+      {/* 5. Vérification OTP (partagé client + prestataire) */}
+      {step === "otp" && (
+        <OTPInput
+          phone={phone}
+          onBack={() => setStep("phone")}
+          onVerified={handleOTPVerified}
+        />
+      )}
+
+      {/* 6. App Client */}
       {step === "app-client" && (
         <>
           <Background />
@@ -187,7 +234,7 @@ export default function App() {
         </>
       )}
 
-      {/* 5. App Prestataire */}
+      {/* 7. App Prestataire */}
       {step === "app-prest" && (
         <>
           <BackgroundPrest />

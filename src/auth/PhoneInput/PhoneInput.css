@@ -1,0 +1,162 @@
+.phone-input {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  background: #f0f6ee;
+  display: flex;
+  flex-direction: column;
+  animation: screenIn 0.35s ease both;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+/* Hero top band */
+.phone-input__hero {
+  background: linear-gradient(135deg, #1A2517, #3A5432);
+  padding: 3rem 1.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.phone-input__icon {
+  font-size: 2.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.phone-input__title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ACC8A2;
+  margin-bottom: 0.4rem;
+}
+
+.phone-input__subtitle {
+  font-size: 0.85rem;
+  color: rgba(172, 200, 162, 0.55);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* Form */
+.phone-input__form {
+  flex: 1;
+  padding: 2rem 1.5rem;
+}
+
+.phone-input__label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1A2517;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+}
+
+/* Country + phone row */
+.phone-input__row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.phone-input__country {
+  width: 130px;
+  flex-shrink: 0;
+  padding: 0.85rem 0.75rem;
+  background: white;
+  border: 1.5px solid rgba(172, 200, 162, 0.4);
+  border-radius: 0.9rem;
+  font-size: 0.88rem;
+  font-family: 'DM Sans', sans-serif;
+  color: #1A2517;
+  outline: none;
+  transition: border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(26,37,23,0.06);
+}
+
+.phone-input__country:focus {
+  border-color: #4A7A3F;
+}
+
+.phone-input__number {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  background: white;
+  border: 1.5px solid rgba(172, 200, 162, 0.4);
+  border-radius: 0.9rem;
+  font-size: 1rem;
+  font-family: 'DM Sans', sans-serif;
+  color: #1A2517;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(26,37,23,0.06);
+}
+
+.phone-input__number::placeholder {
+  color: #d1d5db;
+}
+
+.phone-input__number:focus {
+  border-color: #4A7A3F;
+  box-shadow: 0 0 0 3px rgba(74,122,63,0.12);
+}
+
+.phone-input__hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
+}
+
+.phone-input__btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #1A2517, #3A5432);
+  color: #ACC8A2;
+  border: none;
+  border-radius: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.phone-input__btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(26,37,23,0.25);
+}
+
+.phone-input__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.phone-input__back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(172,200,162,0.12);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #ACC8A2;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.phone-input__back:hover {
+  background: rgba(172,200,162,0.2);
+}
