@@ -1,0 +1,51 @@
+.boost-card {
+  margin: 0.8rem 1.1rem;
+  background: linear-gradient(135deg, #c47f17 0%, #D4A853 50%, #F0D080 100%);
+  border-radius: 1.1rem;
+  padding: 1.1rem;
+  color: #1A2517;
+  position: relative;
+  overflow: hidden;
+}
+
+.boost-card::after {
+  content: "🚀";
+  position: absolute;
+  right: -8px;
+  bottom: -10px;
+  font-size: 4rem;
+  opacity: 0.15;
+  transform: rotate(-20deg);
+  pointer-events: none;
+}
+
+.boost-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.boost-card__desc {
+  font-size: 0.82rem;
+  opacity: 0.75;
+  margin-bottom: 0.9rem;
+  line-height: 1.4;
+}
+
+.boost-card__btn {
+  background: #1A2517;
+  color: #ACC8A2;
+  border: none;
+  padding: 0.6rem 1.3rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.boost-card__btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}

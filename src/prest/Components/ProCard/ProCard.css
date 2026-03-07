@@ -1,0 +1,83 @@
+.pro-card {
+  margin: 0 1.1rem 0.8rem;
+  background: linear-gradient(135deg, #1A2517 0%, #2E3F28 60%, #3A5432 100%);
+  border: 1px solid rgba(172, 200, 162, 0.25);
+  border-radius: 1.1rem;
+  padding: 1.1rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.pro-card::after {
+  content: "💎";
+  position: absolute;
+  right: -5px;
+  bottom: -12px;
+  font-size: 4rem;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.pro-card__badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #ACC8A2, #4A7A3F);
+  color: #1A2517;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+
+.pro-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  color: #ACC8A2;
+}
+
+.pro-card__desc {
+  font-size: 0.82rem;
+  opacity: 0.65;
+  margin-bottom: 0.9rem;
+  line-height: 1.45;
+}
+
+.pro-card__perks {
+  list-style: none;
+  margin-bottom: 0.9rem;
+  padding: 0;
+}
+
+.pro-card__perks li {
+  font-size: 0.8rem;
+  color: rgba(172, 200, 162, 0.85);
+  margin-bottom: 0.25rem;
+}
+
+.pro-card__perks li::before {
+  content: "✓  ";
+  color: #ACC8A2;
+  font-weight: 700;
+}
+
+.pro-card__btn {
+  background: linear-gradient(135deg, #ACC8A2, #C5DFC0);
+  color: #1A2517;
+  border: none;
+  padding: 0.65rem 1.3rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pro-card__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(172, 200, 162, 0.25);
+}

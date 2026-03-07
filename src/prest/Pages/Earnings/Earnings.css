@@ -1,0 +1,117 @@
+.earnings {
+  min-height: 100vh;
+  padding-bottom: 5.5rem;
+  color: white;
+}
+
+.earnings__header {
+  padding: 1.2rem 1.1rem 0.5rem;
+}
+
+.earnings__title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ACC8A2;
+}
+
+.earnings__subtitle {
+  font-size: 0.82rem;
+  color: rgba(172, 200, 162, 0.5);
+  margin-top: 0.2rem;
+}
+
+.earnings__total-card {
+  margin: 0.8rem 1.1rem;
+  background: linear-gradient(135deg, #2E3F28, #3A5432);
+  border: 1px solid rgba(172, 200, 162, 0.2);
+  border-radius: 1.2rem;
+  padding: 1.4rem;
+  text-align: center;
+}
+
+.earnings__total-label {
+  font-size: 0.78rem;
+  color: rgba(172, 200, 162, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+}
+
+.earnings__total-value {
+  font-family: 'Fraunces', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #D4A853;
+}
+
+.earnings__total-currency {
+  font-size: 1rem;
+  color: rgba(212, 168, 83, 0.7);
+  margin-left: 0.3rem;
+}
+
+.earnings__total-period {
+  font-size: 0.75rem;
+  color: rgba(172, 200, 162, 0.4);
+  margin-top: 0.3rem;
+}
+
+.earnings__section {
+  margin: 0.8rem 1.1rem 0;
+}
+
+.earnings__section-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(172, 200, 162, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.7rem;
+}
+
+.earnings__row {
+  background: rgba(172, 200, 162, 0.07);
+  border: 1px solid rgba(172, 200, 162, 0.12);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.earnings__row-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.earnings__row-icon {
+  font-size: 1.1rem;
+}
+
+.earnings__row-info {}
+
+.earnings__row-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ACC8A2;
+}
+
+.earnings__row-date {
+  font-size: 0.75rem;
+  color: rgba(172, 200, 162, 0.45);
+}
+
+.earnings__row-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #D4A853;
+}
+
+.earnings__divider {
+  height: 1px;
+  background: rgba(172, 200, 162, 0.1);
+  margin: 0.8rem 1.1rem;
+}

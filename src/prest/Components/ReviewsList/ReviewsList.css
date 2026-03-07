@@ -1,0 +1,56 @@
+.reviews-list {
+  margin: 0 1.1rem 1rem;
+}
+
+.reviews-list__title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(172, 200, 162, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+
+.reviews-list__item {
+  background: rgba(172, 200, 162, 0.06);
+  border: 1px solid rgba(172, 200, 162, 0.12);
+  border-radius: 0.9rem;
+  padding: 0.85rem;
+  margin-bottom: 0.65rem;
+  transition: background 0.2s;
+}
+
+.reviews-list__item:hover {
+  background: rgba(172, 200, 162, 0.1);
+}
+
+.reviews-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.reviews-list__name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ACC8A2;
+}
+
+.reviews-list__stars {
+  color: #D4A853;
+  font-size: 0.8rem;
+}
+
+.reviews-list__text {
+  font-size: 0.82rem;
+  color: rgba(172, 200, 162, 0.65);
+  line-height: 1.45;
+}
+
+.reviews-list__date {
+  font-size: 0.7rem;
+  color: rgba(172, 200, 162, 0.35);
+  margin-top: 0.3rem;
+  text-align: right;
+}

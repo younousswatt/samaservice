@@ -1,0 +1,199 @@
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 170;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f0f6ee;
+}
+
+/* ── Top hero (dark) ─────────────────────────────────────── */
+.welcome__hero {
+  background: linear-gradient(160deg, #1A2517 0%, #2E3F28 55%, #3A5432 100%);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative rings */
+.welcome__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(172, 200, 162, 0.07);
+  pointer-events: none;
+}
+.welcome__ring--1 { width: 260px; height: 260px; top: -80px; right: -80px; }
+.welcome__ring--2 { width: 420px; height: 420px; top: -140px; right: -140px; }
+
+/* Logo */
+.welcome__logo-wrap {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: rgba(172, 200, 162, 0.1);
+  border: 2px solid rgba(172, 200, 162, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  margin-bottom: 1.3rem;
+  position: relative;
+  animation: logoIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes logoIn {
+  from { opacity: 0; transform: scale(0.6) rotate(-15deg); }
+  to   { opacity: 1; transform: scale(1)   rotate(0deg);   }
+}
+
+.welcome__logo-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 28px;
+  background: radial-gradient(circle, rgba(172,200,162,0.18) 0%, transparent 70%);
+  animation: glowPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1);    }
+  50%       { opacity: 1;   transform: scale(1.07); }
+}
+
+.welcome__title {
+  font-family: 'Fraunces', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ACC8A2;
+  text-align: center;
+  line-height: 1.15;
+  margin-bottom: 0.6rem;
+  animation: fadeUp 0.6s ease 0.25s both;
+}
+
+.welcome__tagline {
+  font-size: 0.9rem;
+  color: rgba(172, 200, 162, 0.55);
+  text-align: center;
+  line-height: 1.55;
+  max-width: 280px;
+  animation: fadeUp 0.6s ease 0.4s both;
+}
+
+/* Pills / features */
+.welcome__pills {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeUp 0.6s ease 0.55s both;
+}
+
+.welcome__pill {
+  background: rgba(172, 200, 162, 0.1);
+  border: 1px solid rgba(172, 200, 162, 0.18);
+  border-radius: 20px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  color: rgba(172, 200, 162, 0.75);
+  font-weight: 500;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Bottom panel (light) ────────────────────────────────── */
+.welcome__bottom {
+  background: #f0f6ee;
+  padding: 2rem 1.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  animation: fadeUp 0.6s ease 0.6s both;
+}
+
+/* Main CTA */
+.welcome__btn-start {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #1A2517, #3A5432);
+  color: #ACC8A2;
+  border: none;
+  border-radius: 1rem;
+  font-family: 'Fraunces', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.welcome__btn-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(26, 37, 23, 0.25);
+}
+
+/* Divider */
+.welcome__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.welcome__divider::before,
+.welcome__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(26, 37, 23, 0.1);
+}
+
+/* Provider question */
+.welcome__provider-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.welcome__provider-label {
+  font-size: 0.88rem;
+  color: #6b7280;
+}
+
+.welcome__btn-provider {
+  background: none;
+  border: 1.5px solid rgba(26, 37, 23, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1A2517;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.welcome__btn-provider:hover {
+  background: #1A2517;
+  color: #ACC8A2;
+  border-color: #1A2517;
+  transform: translateY(-1px);
+}

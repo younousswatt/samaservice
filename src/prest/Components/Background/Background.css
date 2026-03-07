@@ -1,0 +1,36 @@
+.background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(160deg, #1A2517 0%, #2E3F28 50%, #3A5432 100%);
+  overflow: hidden;
+}
+
+.background__circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.08;
+  background: #ACC8A2;
+}
+
+.background__circle--1 {
+  width: 320px;
+  height: 320px;
+  top: -80px;
+  right: -80px;
+}
+
+.background__circle--2 {
+  width: 200px;
+  height: 200px;
+  bottom: 120px;
+  left: -60px;
+}
+
+.background__circle--3 {
+  width: 120px;
+  height: 120px;
+  top: 40%;
+  right: 10%;
+  opacity: 0.05;
+}

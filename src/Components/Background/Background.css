@@ -1,0 +1,40 @@
+.background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(160deg, #f0f6ee 0%, #d4e8ce 50%, #c5dfc0 100%);
+  overflow: hidden;
+}
+
+.background__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+}
+
+.background__blob--1 {
+  width: 280px;
+  height: 280px;
+  top: -60px;
+  right: -60px;
+  background: #ACC8A2;
+}
+
+.background__blob--2 {
+  width: 200px;
+  height: 200px;
+  bottom: 100px;
+  left: -50px;
+  background: #4A7A3F;
+  opacity: 0.15;
+}
+
+.background__blob--3 {
+  width: 150px;
+  height: 150px;
+  top: 45%;
+  right: 5%;
+  background: #ACC8A2;
+  opacity: 0.2;
+}
