@@ -12,22 +12,27 @@ const COUNTRIES = [
 ];
 
 export default function PhoneInput({ onBack, onSubmit }) {
-  const [country,  setCountry]  = useState(COUNTRIES[0]);
-  const [number,   setNumber]   = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
+  const [country, setCountry] = useState(COUNTRIES[0]);
+  const [number,  setNumber]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
 
   const isValid = number.replace(/\s/g, "").length >= 9;
 
   const setupRecaptcha = () => {
-    // Crée le reCAPTCHA invisible une seule fois
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        { size: "normal" }
-      );
+    if (window.recaptchaVerifier) {
+      try { window.recaptchaVerifier.clear(); } catch {}
+      window.recaptchaVerifier = null;
     }
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      "recaptcha-invisible",
+      {
+        size: "invisible",   // ← INVISIBLE, aucun widget affiché
+        callback: () => {},
+        "expired-callback": () => { window.recaptchaVerifier = null; },
+      }
+    );
   };
 
   const handleSend = async () => {
@@ -40,17 +45,19 @@ export default function PhoneInput({ onBack, onSubmit }) {
     try {
       setupRecaptcha();
       const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        fullPhone,
-        window.recaptchaVerifier
+        auth, fullPhone, window.recaptchaVerifier
       );
-      // On passe confirmationResult à l'étape OTP
       window.confirmationResult = confirmationResult;
       onSubmit(fullPhone);
     } catch (err) {
       console.error(err);
-      setError("Erreur lors de l'envoi du SMS. Vérifiez le numéro.");
-      // Reset recaptcha en cas d'erreur
+      if (err.code === "auth/invalid-phone-number") {
+        setError("Numéro de téléphone invalide.");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Trop de tentatives. Réessayez dans quelques minutes.");
+      } else {
+        setError("Erreur lors de l'envoi du SMS. Vérifiez le numéro.");
+      }
       window.recaptchaVerifier = null;
     } finally {
       setLoading(false);
@@ -60,8 +67,8 @@ export default function PhoneInput({ onBack, onSubmit }) {
   const handleChange = (e) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 9);
     const formatted = raw
-      .replace(/^(\d{2})(\d)/,        "$1 $2")
-      .replace(/^(\d{2} \d{3})(\d)/,  "$1 $2")
+      .replace(/^(\d{2})(\d)/,             "$1 $2")
+      .replace(/^(\d{2} \d{3})(\d)/,       "$1 $2")
       .replace(/^(\d{2} \d{3} \d{2})(\d)/, "$1 $2");
     setNumber(formatted);
   };
@@ -70,9 +77,9 @@ export default function PhoneInput({ onBack, onSubmit }) {
     <div className="phone-input">
       <button className="phone-input__back" onClick={onBack}>←</button>
 
-      
+      {/* Div invisible pour Firebase reCAPTCHA — ne s'affiche pas */}
+      <div id="recaptcha-invisible" style={{ display: "none" }} />
 
-      {/* Hero */}
       <div className="phone-input__hero">
         <div className="phone-input__icon">📱</div>
         <div className="phone-input__title">Votre numéro</div>
@@ -81,7 +88,6 @@ export default function PhoneInput({ onBack, onSubmit }) {
         </div>
       </div>
 
-      {/* Form */}
       <div className="phone-input__form">
         <label className="phone-input__label">Numéro de téléphone</label>
 
@@ -89,14 +95,10 @@ export default function PhoneInput({ onBack, onSubmit }) {
           <select
             className="phone-input__country"
             value={country.code}
-            onChange={(e) =>
-              setCountry(COUNTRIES.find((c) => c.code === e.target.value))
-            }
+            onChange={(e) => setCountry(COUNTRIES.find((c) => c.code === e.target.value))}
           >
             {COUNTRIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.flag} {c.code}
-              </option>
+              <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
             ))}
           </select>
 
@@ -106,20 +108,19 @@ export default function PhoneInput({ onBack, onSubmit }) {
             placeholder="77 000 00 00"
             value={number}
             onChange={handleChange}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             autoFocus
           />
         </div>
 
         {error && (
-          <div style={{ color: "#ef4444", fontSize: ".82rem", marginBottom: "1rem" }}>
-            ⚠️ {error}
-          </div>
+          <div className="phone-input__error">⚠️ {error}</div>
         )}
 
         <div className="phone-input__hint">
           Exemple : 77 123 45 67 ou 78 000 00 00
         </div>
-        <div id="recaptcha-container" />
+
         <button
           className="phone-input__btn"
           onClick={handleSend}

@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { auth } from "./firebase";
+import {
+  saveUser, saveProvider, saveProviderLocation,
+  getFavorites, addFavorite, removeFavorite,
+  seedTestProviders,
+} from "./firestoreService";
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────
 import Splash            from "./auth/Splash/Splash";
 import Welcome           from "./auth/Welcome/Welcome";
 import ClientNameInput   from "./auth/ClientNameInput/ClientNameInput";
 import ProviderNameInput from "./auth/ProviderNameInput/ProviderNameInput";
 import PhoneInput        from "./auth/PhoneInput/PhoneInput";
 import OTPInput          from "./auth/OTPInput/OTPInput";
+import LocationSetup     from "./auth/LocationSetup/LocationSetup";
 
-// ── App Client ────────────────────────────────────────────────────────────────
+// ── App Client ────────────────────────────────────────────────
 import Background    from "./Components/Background/Background";
 import Header        from "./Components/Header/Header";
 import BottomNav     from "./Components/BottomNav/BottomNav";
@@ -18,7 +25,7 @@ import Search        from "./Pages/Search/Search";
 import Favorites     from "./Pages/Favorites/Favorites";
 import ClientProfile from "./Pages/Profile/Profile";
 
-// ── App Prestataire ───────────────────────────────────────────────────────────
+// ── App Prestataire ───────────────────────────────────────────
 import BackgroundPrest from "./prest/Components/Background/Background";
 import HeaderPrest     from "./prest/Components/Header/Header";
 import BottomNavPrest  from "./prest/Components/BottomNav/BottomNav";
@@ -26,84 +33,108 @@ import Dashboard       from "./prest/Pages/Dashboard/Dashboard";
 import Earnings        from "./prest/Pages/Earnings/Earnings";
 import ProviderProfile from "./prest/Pages/Profile/Profile";
 
-// ── Flow ──────────────────────────────────────────────────────────────────────
-// splash → welcome
-//   → client-name → phone → otp → app-client
-//   → provider-name → phone → otp → app-prest
-
 export default function App() {
-  const [step, setStep] = useState("splash");
-
-  // Noms saisis
-  const [clientName,   setClientName]   = useState("");
-  const [providerName, setProviderName] = useState("");
-  const [phone,        setPhone]        = useState("");
-
-  // Qui est en train de s'authentifier : "client" ou "provider"
+  const [step,     setStep]     = useState("splash");
   const [authRole, setAuthRole] = useState("");
+  const [phone,    setPhone]    = useState("");
 
-  // ── Client app state ───────────────────────────────────────────────────────
+  const [clientName,    setClientName]    = useState("");
+  const [providerName,  setProviderName]  = useState("");
+  const [providerMetier, setProviderMetier] = useState(null); // { id, label, icon, category }
+
+  // ── Client state ──────────────────────────────────────────
   const [clientPage,       setClientPage]       = useState("home");
   const [favorites,        setFavorites]        = useState([]);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [searchService,    setSearchService]    = useState(null);
 
-  // ── Prestataire app state ──────────────────────────────────────────────────
+  // ── Prestataire state ─────────────────────────────────────
   const [prestPage, setPrestPage] = useState("dashboard");
 
-  // ── Logout ────────────────────────────────────────────────────────────────
+  // ── Seed prestataires test au 1er lancement ───────────────
+  useEffect(() => {
+    const alreadySeeded = localStorage.getItem("sama_seeded");
+    if (!alreadySeeded) {
+      seedTestProviders()
+        .then(() => localStorage.setItem("sama_seeded", "1"))
+        .catch(console.error);
+    }
+  }, []);
+
+  // ── Logout ────────────────────────────────────────────────
   const handleLogout = () => {
-    setClientName("");
-    setProviderName("");
-    setPhone("");
-    setAuthRole("");
-    setClientPage("home");
-    setPrestPage("dashboard");
-    setFavorites([]);
-    setSelectedProvider(null);
-    setSearchService(null);
+    setClientName(""); setProviderName(""); setPhone(""); setAuthRole("");
+    setProviderMetier(null);
+    setClientPage("home"); setPrestPage("dashboard");
+    setFavorites([]); setSelectedProvider(null); setSearchService(null);
     setStep("welcome");
   };
 
-  // ── Auth handlers ──────────────────────────────────────────────────────────
+  // ── OTP vérifié → Firestore ───────────────────────────────
+  const handleOTPVerified = async () => {
+    const uid = auth.currentUser?.uid;
+    try {
+      if (authRole === "client") {
+        await saveUser(uid, { name: clientName, phone, role: "client" });
+        const favIds = await getFavorites(uid);
+        setFavorites(favIds);
+        setStep("app-client");
+      } else {
+        await saveUser(uid, { name: providerName, phone, role: "provider" });
+        await saveProvider(uid, {
+          name:      providerName,
+          phone,
+          service:   providerMetier?.label  || "",
+          serviceId: providerMetier?.id     || "",
+        });
+        setStep("location-setup");
+      }
+    } catch (err) {
+      console.error("Firestore:", err);
+      setStep(authRole === "client" ? "app-client" : "location-setup");
+    }
+  };
+
+  // ── Localisation configurée ───────────────────────────────
+  const handleLocationDone = async (locationData) => {
+    const uid = auth.currentUser?.uid;
+    if (uid && (locationData.lat || locationData.quartier)) {
+      try { await saveProviderLocation(uid, locationData); }
+      catch (err) { console.error("GPS save:", err); }
+    }
+    setStep("app-prest");
+  };
+
+  // ── Favoris ───────────────────────────────────────────────
+  const handleFavToggle = async (providerId) => {
+    const uid = auth.currentUser?.uid;
+    if (favorites.includes(providerId)) {
+      setFavorites((prev) => prev.filter((f) => f !== providerId));
+      if (uid) await removeFavorite(uid, providerId);
+    } else {
+      setFavorites((prev) => [...prev, providerId]);
+      if (uid) await addFavorite(uid, providerId);
+    }
+  };
+
+  // ── Auth handlers ─────────────────────────────────────────
   const handleClientNameSubmit = (name) => {
     setClientName(name);
     setAuthRole("client");
     setStep("phone");
   };
 
-  const handleProviderNameSubmit = (name) => {
+  // ProviderNameInput passe maintenant (name, metier)
+  const handleProviderNameSubmit = (name, metier) => {
     setProviderName(name);
+    setProviderMetier(metier);
     setAuthRole("provider");
     setStep("phone");
   };
 
-  const handlePhoneSubmit = (fullPhone) => {
-    setPhone(fullPhone);
-    setStep("otp");
-  };
+  const handlePhoneSubmit = (p) => { setPhone(p); setStep("otp"); };
 
-  const handleOTPVerified = () => {
-    // Redirige selon le rôle
-    if (authRole === "client") {
-      setStep("app-client");
-    } else {
-      setStep("app-prest");
-    }
-  };
-
-  // ── Autres handlers ────────────────────────────────────────────────────────
-  const handleFavToggle = (id) =>
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
-    );
-
-  const handleSeeAll = (service) => {
-    setSearchService(service);
-    setClientPage("search");
-  };
-
-  // ── Render client page ─────────────────────────────────────────────────────
+  // ── Client pages ──────────────────────────────────────────
   const renderClientPage = () => {
     switch (clientPage) {
       case "home":
@@ -113,7 +144,7 @@ export default function App() {
             favorites={favorites}
             onFavToggle={handleFavToggle}
             onProviderClick={setSelectedProvider}
-            onSeeAll={handleSeeAll}
+            onSeeAll={(s) => { setSearchService(s); setClientPage("search"); }}
             onSearchFocus={() => setClientPage("search")}
           />
         );
@@ -135,20 +166,18 @@ export default function App() {
           />
         );
       case "profile":
-        return <ClientProfile clientName={clientName} onLogout={handleLogout} />;
-      default:
-        return null;
+        return <ClientProfile clientName={clientName} clientPhone={phone} onLogout={handleLogout} />;
+      default: return null;
     }
   };
 
-  // ── Render prestataire page ────────────────────────────────────────────────
+  // ── Prestataire pages ─────────────────────────────────────
   const renderPrestPage = () => {
     switch (prestPage) {
       case "dashboard": return <Dashboard providerName={providerName} />;
       case "earnings":  return <Earnings />;
-      case "profile":
-        return <ProviderProfile providerName={providerName} onLogout={handleLogout} />;
-      default: return <Dashboard providerName={providerName} />;
+      case "profile":   return <ProviderProfile providerName={providerName} onLogout={handleLogout} />;
+      default:          return <Dashboard providerName={providerName} />;
     }
   };
 
@@ -163,62 +192,18 @@ export default function App() {
     <>
       <style>{globalStyles}</style>
 
-      {/* 1. Splash */}
-      {step === "splash" && (
-        <Splash onDone={() => setStep("welcome")} />
-      )}
+      {step === "splash"         && <Splash onDone={() => setStep("welcome")} />}
+      {step === "welcome"        && <Welcome onClientStart={() => setStep("client-name")} onProviderStart={() => setStep("provider-name")} />}
+      {step === "client-name"    && <ClientNameInput   onBack={() => setStep("welcome")} onSubmit={handleClientNameSubmit} />}
+      {step === "provider-name"  && <ProviderNameInput onBack={() => setStep("welcome")} onSubmit={handleProviderNameSubmit} />}
+      {step === "phone"          && <PhoneInput onBack={() => setStep(authRole === "client" ? "client-name" : "provider-name")} onSubmit={handlePhoneSubmit} />}
+      {step === "otp"            && <OTPInput phone={phone} onBack={() => setStep("phone")} onVerified={handleOTPVerified} />}
+      {step === "location-setup" && <LocationSetup providerName={providerName} onDone={handleLocationDone} />}
 
-      {/* 2. Welcome */}
-      {step === "welcome" && (
-        <Welcome
-          onClientStart={() => setStep("client-name")}
-          onProviderStart={() => setStep("provider-name")}
-        />
-      )}
-
-      {/* 3a. Saisie nom client */}
-      {step === "client-name" && (
-        <ClientNameInput
-          onBack={() => setStep("welcome")}
-          onSubmit={handleClientNameSubmit}
-        />
-      )}
-
-      {/* 3b. Saisie nom prestataire */}
-      {step === "provider-name" && (
-        <ProviderNameInput
-          onBack={() => setStep("welcome")}
-          onSubmit={handleProviderNameSubmit}
-        />
-      )}
-
-      {/* 4. Saisie téléphone (partagé client + prestataire) */}
-      {step === "phone" && (
-        <PhoneInput
-          onBack={() =>
-            setStep(authRole === "client" ? "client-name" : "provider-name")
-          }
-          onSubmit={handlePhoneSubmit}
-        />
-      )}
-
-      {/* 5. Vérification OTP (partagé client + prestataire) */}
-      {step === "otp" && (
-        <OTPInput
-          phone={phone}
-          onBack={() => setStep("phone")}
-          onVerified={handleOTPVerified}
-        />
-      )}
-
-      {/* 6. App Client */}
       {step === "app-client" && (
         <>
           <Background />
-          <Header
-            clientName={clientName}
-            onProfileClick={() => setClientPage("profile")}
-          />
+          <Header clientName={clientName} onProfileClick={() => setClientPage("profile")} />
           <main>{renderClientPage()}</main>
           <BottomNav
             active={clientPage}
@@ -226,27 +211,17 @@ export default function App() {
             favCount={favorites.length}
           />
           {selectedProvider && (
-            <ProviderModal
-              provider={selectedProvider}
-              onClose={() => setSelectedProvider(null)}
-            />
+            <ProviderModal provider={selectedProvider} onClose={() => setSelectedProvider(null)} />
           )}
         </>
       )}
 
-      {/* 7. App Prestataire */}
       {step === "app-prest" && (
         <>
           <BackgroundPrest />
-          <HeaderPrest
-            providerName={providerName}
-            onProfileClick={() => setPrestPage("profile")}
-          />
+          <HeaderPrest providerName={providerName} onProfileClick={() => setPrestPage("profile")} />
           <main>{renderPrestPage()}</main>
-          <BottomNavPrest
-            active={prestPage}
-            onChange={setPrestPage}
-          />
+          <BottomNavPrest active={prestPage} onChange={setPrestPage} />
         </>
       )}
     </>

@@ -1,0 +1,237 @@
+/* ── Conteneur ────────────────────────────────────── */
+.location-setup {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #1A2517 0%, #2C3E28 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 40px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Hero ─────────────────────────────────────────── */
+.location-setup__hero {
+  width: 100%;
+  padding: 60px 24px 32px;
+  text-align: center;
+}
+
+.location-setup__icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
+}
+
+.location-setup__title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+}
+
+.location-setup__subtitle {
+  font-size: 0.95rem;
+  color: #ACC8A2;
+  line-height: 1.5;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* ── Contenu ──────────────────────────────────────── */
+.location-setup__content {
+  width: 100%;
+  max-width: 420px;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Options (GPS / Manuel) ───────────────────────── */
+.location-setup__option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid rgba(172,200,162,0.3);
+  border-radius: 14px;
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.location-setup__option:hover,
+.location-setup__option:active {
+  background: rgba(172,200,162,0.15);
+  border-color: #ACC8A2;
+  transform: translateY(-1px);
+}
+
+.location-setup__option-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.location-setup__option-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.location-setup__option-text strong {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.location-setup__option-text span {
+  color: #9CA3AF;
+  font-size: 0.82rem;
+}
+
+.location-setup__option-arrow {
+  color: #D4A853;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ── Séparateur ───────────────────────────────────── */
+.location-setup__or {
+  text-align: center;
+  color: #6B7280;
+  font-size: 0.85rem;
+  position: relative;
+}
+
+.location-setup__or::before,
+.location-setup__or::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 38%;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+.location-setup__or::before { left: 0; }
+.location-setup__or::after  { right: 0; }
+
+/* ── Loading ──────────────────────────────────────── */
+.location-setup__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+  color: #ACC8A2;
+  font-size: 0.95rem;
+}
+
+.location-setup__spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(172,200,162,0.2);
+  border-top-color: #ACC8A2;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Formulaire manuel ────────────────────────────── */
+.location-setup__warning {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #FCD34D;
+}
+
+.location-setup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.location-setup__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ACC8A2;
+}
+
+.location-setup__input,
+.location-setup__select {
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(172,200,162,0.3);
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.location-setup__input::placeholder {
+  color: #6B7280;
+}
+
+.location-setup__input:focus,
+.location-setup__select:focus {
+  border-color: #ACC8A2;
+}
+
+.location-setup__select option {
+  background: #1A2517;
+  color: #fff;
+}
+
+/* ── Bouton principal ─────────────────────────────── */
+.location-setup__btn {
+  margin-top: 8px;
+  padding: 16px;
+  background: #ACC8A2;
+  color: #1A2517;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+
+.location-setup__btn:hover:not(:disabled) {
+  background: #7AA874;
+  transform: translateY(-1px);
+}
+
+.location-setup__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Skip ─────────────────────────────────────────── */
+.location-setup__skip {
+  background: none;
+  border: none;
+  color: #6B7280;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: center;
+  padding: 8px;
+  font-family: 'DM Sans', sans-serif;
+  text-decoration: underline;
+}
+
+.location-setup__skip:hover {
+  color: #9CA3AF;
+}
