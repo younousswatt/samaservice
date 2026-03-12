@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { auth } from "../../../firebase";
 import { getProvider, updateAvailability, saveProvider, ALL_SERVICES } from "../../../firestoreService";
+import { getReviews } from "../../../reviewService";
 import "./Profile.css";
+
+function StarDisplay({ rating = 0 }) {
+  return (
+    <span style={{ color: "#D4A853", fontSize: "0.9rem", letterSpacing: "1px" }}>
+      {"★".repeat(Math.floor(rating))}{"☆".repeat(5 - Math.floor(rating))}
+    </span>
+  );
+}
 
 export default function ProviderProfile({ providerName, onLogout }) {
   const [providerData, setProviderData] = useState(null);
@@ -11,25 +20,34 @@ export default function ProviderProfile({ providerName, onLogout }) {
   const [saving,       setSaving]       = useState(false);
   const [saveMsg,      setSaveMsg]      = useState("");
 
+  // Avis reçus
+  const [reviews,     setReviews]     = useState([]);
+  const [loadingRevs, setLoadingRevs] = useState(true);
+  const [showAllRevs, setShowAllRevs] = useState(false);
+
   // Champs édition
   const [editName,      setEditName]      = useState("");
   const [editServiceId, setEditServiceId] = useState("");
   const [editQuartier,  setEditQuartier]  = useState("");
   const [editVille,     setEditVille]     = useState("");
 
+  const uid = auth.currentUser?.uid;
+
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
     if (!uid) { setLoading(false); return; }
     getProvider(uid).then((data) => {
       if (data) { setProviderData(data); setAvailable(data.available ?? true); }
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+
+    getReviews(uid)
+      .then((data) => { setReviews(data); setLoadingRevs(false); })
+      .catch(()    => setLoadingRevs(false));
+  }, [uid]);
 
   const handleToggleAvail = async () => {
     const newVal = !available;
     setAvailable(newVal);
-    const uid = auth.currentUser?.uid;
     if (uid) await updateAvailability(uid, newVal);
   };
 
@@ -46,7 +64,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
     if (!editName.trim()) return;
     setSaving(true);
     try {
-      const uid = auth.currentUser?.uid;
       const selectedService = ALL_SERVICES.find((s) => s.id === editServiceId);
       await saveProvider(uid, {
         name:      editName.trim(),
@@ -87,6 +104,13 @@ export default function ProviderProfile({ providerName, onLogout }) {
   const serviceDisplay = serviceObj
     ? `${serviceObj.icon} ${serviceObj.label}`
     : providerData?.service || "–";
+
+  const formatDate = (ts) => {
+    if (!ts?.toDate) return "";
+    return ts.toDate().toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  const displayReviews = showAllRevs ? reviews : reviews.slice(0, 3);
 
   if (loading) {
     return (
@@ -133,7 +157,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
         </div>
       </div>
 
-      {/* Message succès/erreur */}
       {saveMsg && (
         <div className={`profile-page__msg ${saveMsg.startsWith("✅") ? "profile-page__msg--ok" : "profile-page__msg--err"}`}>
           {saveMsg}
@@ -145,13 +168,12 @@ export default function ProviderProfile({ providerName, onLogout }) {
         <>
           <div className="profile-page__section">
             <h3 className="profile-page__section-title">Mes informations</h3>
-
             {[
               { icon: "👤", label: "Nom",              value: displayName },
-              { icon: "📱", label: "Téléphone",         value: displayPhone },
-              { icon: "🔧", label: "Service principal", value: serviceDisplay },
-              { icon: "📍", label: "Localisation",      value: locationDisplay },
-              { icon: "📅", label: "Inscrit depuis",    value: providerData?.createdAt?.toDate
+              { icon: "📱", label: "Téléphone",        value: displayPhone },
+              { icon: "🔧", label: "Service principal",value: serviceDisplay },
+              { icon: "📍", label: "Localisation",     value: locationDisplay },
+              { icon: "📅", label: "Inscrit depuis",   value: providerData?.createdAt?.toDate
                   ? providerData.createdAt.toDate().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
                   : "–" },
             ].map(({ icon, label, value }) => (
@@ -165,6 +187,52 @@ export default function ProviderProfile({ providerName, onLogout }) {
             ))}
           </div>
 
+          {/* ── Avis reçus ──────────────────────────── */}
+          <div className="profile-page__section">
+            <h3 className="profile-page__section-title">
+              Avis reçus {reviews.length > 0 && `(${reviews.length})`}
+            </h3>
+
+            {loadingRevs ? (
+              <div className="profile-loading" style={{ minHeight: 60 }}>
+                <div className="profile-loading__spinner" />
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="profile-page__revs-empty">
+                Pas encore d'avis. Vos clients pourront vous noter après une prestation.
+              </div>
+            ) : (
+              <>
+                {displayReviews.map((rev) => (
+                  <div key={rev.id} className="profile-page__review">
+                    <div className="profile-page__review-top">
+                      <div className="profile-page__review-avatar">
+                        {rev.clientName?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                      <div className="profile-page__review-meta">
+                        <span className="profile-page__review-name">{rev.clientName || "Anonyme"}</span>
+                        <span className="profile-page__review-date">{formatDate(rev.createdAt)}</span>
+                      </div>
+                      <StarDisplay rating={rev.rating || 0} />
+                    </div>
+                    {rev.comment && (
+                      <p className="profile-page__review-comment">"{rev.comment}"</p>
+                    )}
+                  </div>
+                ))}
+                {reviews.length > 3 && (
+                  <button
+                    className="profile-page__revs-more"
+                    onClick={() => setShowAllRevs((v) => !v)}
+                  >
+                    {showAllRevs ? "Voir moins ↑" : `Voir les ${reviews.length - 3} autres avis ↓`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* ── Mon compte ──────────────────────────── */}
           <div className="profile-page__section">
             <h3 className="profile-page__section-title">Mon compte</h3>
 
@@ -202,7 +270,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
         <div className="profile-page__section">
           <h3 className="profile-page__section-title">Modifier mon profil</h3>
 
-          {/* Nom */}
           <div className="profile-page__edit-field">
             <label className="profile-page__edit-label">👤 Nom complet</label>
             <input
@@ -215,7 +282,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
             />
           </div>
 
-          {/* Téléphone (non modifiable) */}
           <div className="profile-page__edit-field">
             <label className="profile-page__edit-label">📱 Téléphone</label>
             <input
@@ -227,7 +293,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
             <span className="profile-page__edit-hint">Non modifiable</span>
           </div>
 
-          {/* Service */}
           <div className="profile-page__edit-field">
             <label className="profile-page__edit-label">🔧 Service principal</label>
             <select
@@ -242,7 +307,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
             </select>
           </div>
 
-          {/* Quartier */}
           <div className="profile-page__edit-field">
             <label className="profile-page__edit-label">📍 Quartier</label>
             <input
@@ -254,7 +318,6 @@ export default function ProviderProfile({ providerName, onLogout }) {
             />
           </div>
 
-          {/* Ville */}
           <div className="profile-page__edit-field">
             <label className="profile-page__edit-label">🏙️ Ville</label>
             <input

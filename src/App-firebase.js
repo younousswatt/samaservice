@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { auth } from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   saveUser, saveProvider, saveProviderLocation,
+  getUser, getProvider,
   getFavorites, addFavorite, removeFavorite,
   seedTestProviders,
 } from "./firestoreService";
@@ -52,15 +54,15 @@ export default function App() {
   const [favorites,        setFavorites]        = useState([]);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [searchService,    setSearchService]    = useState(null);
-  const [activeChat,       setActiveChat]       = useState(null); // provider object
+  const [activeChat,       setActiveChat]       = useState(null);
   const [unreadClient,     setUnreadClient]     = useState(0);
 
   // ── Prestataire state ─────────────────────────────────────
-  const [prestPage,      setPrestPage]      = useState("dashboard");
-  const [activePrestChat, setActivePrestChat] = useState(null); // chat object
-  const [unreadPrest,    setUnreadPrest]    = useState(0);
+  const [prestPage,       setPrestPage]       = useState("dashboard");
+  const [activePrestChat, setActivePrestChat] = useState(null);
+  const [unreadPrest,     setUnreadPrest]     = useState(0);
 
-  // ── Seed au 1er lancement ─────────────────────────────────
+  // ── Seed ──────────────────────────────────────────────────
   useEffect(() => {
     if (!localStorage.getItem("sama_seeded")) {
       seedTestProviders()
@@ -69,32 +71,68 @@ export default function App() {
     }
   }, []);
 
-  // ── Écouter les non-lus client ────────────────────────────
+  // ── RECONNEXION AUTOMATIQUE ───────────────────────────────
+  // Si Firebase Auth a déjà un utilisateur connecté (session persistée),
+  // on le reconnecte directement sans repasser par le flow d'auth.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return; // pas connecté, le flow normal gère ça
+      if (step !== "splash" && step !== "welcome") return; // déjà dans le flow
+
+      try {
+        // Chercher d'abord dans users
+        const userData = await getUser(user.uid);
+        if (userData?.role === "client") {
+          setClientName(userData.name || "");
+          setPhone(userData.phone || user.phoneNumber || "");
+          const favs = await getFavorites(user.uid);
+          setFavorites(favs);
+          setStep("app-client");
+          return;
+        }
+
+        // Chercher dans providers
+        const providerData = await getProvider(user.uid);
+        if (providerData) {
+          setProviderName(providerData.name || "");
+          setPhone(providerData.phone || user.phoneNumber || "");
+          setStep("app-prest");
+          return;
+        }
+
+        // Compte Firebase existe mais pas dans Firestore → flow normal
+      } catch (err) {
+        console.error("Erreur reconnexion:", err);
+      }
+    });
+    return () => unsub();
+  }, []); // eslint-disable-line
+
+  // ── Non-lus client ────────────────────────────────────────
   useEffect(() => {
     if (step !== "app-client") return;
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const unsub = listenClientChats(uid, (chats) => {
-      const total = chats.reduce((s, c) => s + (c.unreadClient || 0), 0);
-      setUnreadClient(total);
+      setUnreadClient(chats.reduce((s, c) => s + (c.unreadClient || 0), 0));
     });
     return () => unsub();
   }, [step]);
 
-  // ── Écouter les non-lus prestataire ───────────────────────
+  // ── Non-lus prestataire ───────────────────────────────────
   useEffect(() => {
     if (step !== "app-prest") return;
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const unsub = listenProviderChats(uid, (chats) => {
-      const total = chats.reduce((s, c) => s + (c.unreadProvider || 0), 0);
-      setUnreadPrest(total);
+      setUnreadPrest(chats.reduce((s, c) => s + (c.unreadProvider || 0), 0));
     });
     return () => unsub();
   }, [step]);
 
   // ── Logout ────────────────────────────────────────────────
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await auth.signOut(); } catch {}
     setClientName(""); setProviderName(""); setPhone(""); setAuthRole("");
     setProviderMetier(null); setClientPage("home"); setPrestPage("dashboard");
     setFavorites([]); setSelectedProvider(null); setSearchService(null);
@@ -103,26 +141,53 @@ export default function App() {
     setStep("welcome");
   };
 
-  // ── OTP vérifié ───────────────────────────────────────────
+  // ── OTP vérifié — vérifier si compte existant ────────────
   const handleOTPVerified = async () => {
-    const uid = auth.currentUser?.uid;
+    const uid  = auth.currentUser?.uid;
+    const userPhone = auth.currentUser?.phoneNumber || phone;
+
     try {
+      // 1. Vérifier si compte existant dans Firestore
+      const existingUser     = await getUser(uid);
+      const existingProvider = await getProvider(uid);
+
+      if (existingUser?.role === "client") {
+        // Compte client existant → reconnexion directe
+        setClientName(existingUser.name || clientName);
+        setPhone(existingUser.phone || userPhone);
+        const favs = await getFavorites(uid);
+        setFavorites(favs);
+        setStep("app-client");
+        return;
+      }
+
+      if (existingProvider) {
+        // Compte prestataire existant → reconnexion directe
+        setProviderName(existingProvider.name || providerName);
+        setPhone(existingProvider.phone || userPhone);
+        setStep("app-prest");
+        return;
+      }
+
+      // 2. Nouveau compte → créer selon le rôle choisi
       if (authRole === "client") {
-        await saveUser(uid, { name: clientName, phone, role: "client" });
-        setFavorites(await getFavorites(uid));
+        await saveUser(uid, { name: clientName, phone: userPhone, role: "client" });
+        const favs = await getFavorites(uid);
+        setFavorites(favs);
         setStep("app-client");
       } else {
-        await saveUser(uid, { name: providerName, phone, role: "provider" });
+        await saveUser(uid, { name: providerName, phone: userPhone, role: "provider" });
         await saveProvider(uid, {
           name:      providerName,
-          phone,
+          phone:     userPhone,
           service:   providerMetier?.label  || "",
           serviceId: providerMetier?.id     || "",
         });
         setStep("location-setup");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Erreur OTP:", err);
+      // Fallback selon le rôle choisi
       setStep(authRole === "client" ? "app-client" : "location-setup");
     }
   };
@@ -152,32 +217,29 @@ export default function App() {
   const handleProviderNameSubmit = (name, metier) => { setProviderName(name); setProviderMetier(metier); setAuthRole("provider"); setStep("phone"); };
   const handlePhoneSubmit        = (p)            => { setPhone(p); setStep("otp"); };
 
-  // ── Ouvrir un chat depuis ProviderModal ───────────────────
+  // ── Chat handlers ─────────────────────────────────────────
   const handleOpenChat = (provider) => {
     setActiveChat(provider);
     setClientPage("chat");
     setSelectedProvider(null);
   };
 
-  // ── Ouvrir un chat depuis la liste (client) ───────────────
   const handleOpenChatFromList = (chat) => {
-    // Reconstruire l'objet provider depuis le chat
     setActiveChat({
       id:      chat.providerId,
       name:    chat.providerName,
       phone:   chat.providerPhone,
-      service: "",
+      service: chat.providerService || "",
     });
     setClientPage("chat");
   };
 
-  // ── Ouvrir un chat depuis la liste (prestataire) ──────────
   const handleOpenPrestChat = (chat) => {
     setActivePrestChat(chat);
     setPrestPage("chat");
   };
 
-  // ── Client pages ──────────────────────────────────────────
+  // ── Pages client ──────────────────────────────────────────
   const renderClientPage = () => {
     switch (clientPage) {
       case "home":
@@ -201,7 +263,7 @@ export default function App() {
           />
         );
       case "messages":
-        return <ConversationsList role="client" onOpenChat={handleOpenChatFromList} />;
+        return <ConversationsList onOpenChat={handleOpenChatFromList} />;
       case "chat":
         return (
           <ChatScreen
@@ -224,11 +286,11 @@ export default function App() {
     }
   };
 
-  // ── Prestataire pages ─────────────────────────────────────
+  // ── Pages prestataire ─────────────────────────────────────
   const renderPrestPage = () => {
     switch (prestPage) {
       case "dashboard": return <Dashboard providerName={providerName} />;
-      case "messages":  return <PrestConvos role="provider" onOpenChat={handleOpenPrestChat} />;
+      case "messages":  return <PrestConvos onOpenChat={handleOpenPrestChat} />;
       case "chat":
         return (
           <PrestChatScreen
@@ -243,7 +305,6 @@ export default function App() {
     }
   };
 
-  // Masquer BottomNav quand le chat est ouvert (plein écran)
   const hideClientNav = clientPage === "chat";
   const hidePrestNav  = prestPage  === "chat";
 

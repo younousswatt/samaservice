@@ -2,24 +2,26 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { auth } from "../../firebase";
 import {
   getOrCreateChat, sendMessage,
-  listenMessages, markAsRead,
+  listenMessages, markAsRead, respondToQuote,
 } from "../../chatService";
 import { hasAlreadyReviewed } from "../../reviewService";
 import RatingModal from "./RatingModal";
 import "./ChatScreen.css";
 
 export default function ChatScreen({ provider, clientName, onBack }) {
-  const [chatId,      setChatId]      = useState(null);
-  const [messages,    setMessages]    = useState([]);
-  const [text,        setText]        = useState("");
-  const [sending,     setSending]     = useState(false);
-  const [loading,     setLoading]     = useState(true);
-  const [showRating,  setShowRating]  = useState(false);
-  const [canRate,     setCanRate]     = useState(false);
+  const [chatId,     setChatId]     = useState(null);
+  const [messages,   setMessages]   = useState([]);
+  const [text,       setText]       = useState("");
+  const [sending,    setSending]    = useState(false);
+  const [loading,    setLoading]    = useState(true);
+  const [sendError,  setSendError]  = useState("");
+  const [showRating, setShowRating] = useState(false);
+  const [canRate,    setCanRate]    = useState(false);
   const bottomRef = useRef(null);
 
   const uid = auth.currentUser?.uid;
 
+  // ── Initialiser le chat ───────────────────────────────────
   const initChat = useCallback(async () => {
     if (!uid || !provider?.id) return;
     try {
@@ -31,37 +33,58 @@ export default function ChatScreen({ provider, clientName, onBack }) {
         provider.phone || ""
       );
       setChatId(id);
-      // Vérifier si déjà noté
-      const already = await hasAlreadyReviewed(uid, provider.id);
+      const already = await hasAlreadyReviewed(uid, provider.id).catch(() => false);
       setCanRate(!already);
-    } catch {}
+    } catch (err) {
+      console.error("initChat error:", err);
+    }
     setLoading(false);
   }, [uid, provider?.id, provider?.name, provider?.phone, clientName]);
 
   useEffect(() => { initChat(); }, [initChat]);
 
+  // ── Écouter les messages ──────────────────────────────────
   useEffect(() => {
     if (!chatId) return;
-    markAsRead(chatId, "client").catch(() => {});
-    const unsub = listenMessages(chatId, setMessages);
+    markAsRead(chatId, "client");
+    const unsub = listenMessages(chatId, (msgs) => {
+      setMessages(msgs);
+    });
     return () => unsub();
   }, [chatId]);
 
+  // ── Scroll bas ────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ── Envoyer message ───────────────────────────────────────
   const handleSend = async () => {
-    if (!text.trim() || !chatId || sending) return;
+    const trimmed = text.trim();
+    if (!trimmed || !chatId || sending) return;
+
     setSending(true);
-    const msg = text.trim();
-    setText("");
+    setSendError("");
+    setText(""); // vider immédiatement pour fluidité
+
     try {
-      await sendMessage(chatId, uid, clientName || "Client", msg, "client");
-    } catch {
-      setText(msg);
+      await sendMessage(chatId, uid, clientName || "Client", trimmed, "client");
+    } catch (err) {
+      console.error("Erreur envoi:", err);
+      setText(trimmed); // remettre le texte si erreur
+      setSendError("Impossible d'envoyer. Vérifiez votre connexion.");
     } finally {
       setSending(false);
+    }
+  };
+
+  // ── Répondre à un devis ───────────────────────────────────
+  const handleQuoteResponse = async (messageId, response) => {
+    if (!chatId) return;
+    try {
+      await respondToQuote(chatId, messageId, response, uid, clientName || "Client");
+    } catch (err) {
+      console.error("Erreur réponse devis:", err);
     }
   };
 
@@ -70,9 +93,70 @@ export default function ChatScreen({ provider, clientName, onBack }) {
     return ts.toDate().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Vérifier si le prestataire a répondu (messages des deux côtés)
   const providerReplied = messages.some((m) => m.senderId === provider?.id);
-  const showRateBtn = canRate && providerReplied && messages.length >= 2;
+  const showRateBtn     = canRate && providerReplied && messages.length >= 2;
+
+  // ── Rendu d'une bulle ─────────────────────────────────────
+  const renderMessage = (msg) => {
+    const isMe = msg.senderId === uid;
+
+    // Message système
+    if (msg.type === "system") {
+      return (
+        <div key={msg.id} className="chat-system-msg">
+          {msg.text}
+        </div>
+      );
+    }
+
+    // Bulle devis
+    if (msg.type === "quote") {
+      return (
+        <div key={msg.id} className={`chat-quote ${isMe ? "chat-quote--me" : ""}`}>
+          <div className="chat-quote__header">💰 Devis proposé</div>
+          <div className="chat-quote__amount">
+            {(msg.amount || 0).toLocaleString("fr-FR")} FCFA
+          </div>
+          {msg.description && (
+            <div className="chat-quote__desc">{msg.description}</div>
+          )}
+          <div className="chat-quote__time">{formatTime(msg.createdAt)}</div>
+
+          {/* Boutons accepter/refuser — uniquement pour le client si encore en attente */}
+          {msg.status === "pending" && !isMe && (
+            <div className="chat-quote__actions">
+              <button
+                className="chat-quote__btn chat-quote__btn--accept"
+                onClick={() => handleQuoteResponse(msg.id, "accepted")}
+              >
+                ✅ Accepter
+              </button>
+              <button
+                className="chat-quote__btn chat-quote__btn--refuse"
+                onClick={() => handleQuoteResponse(msg.id, "refused")}
+              >
+                ❌ Refuser
+              </button>
+            </div>
+          )}
+          {msg.status === "accepted" && (
+            <div className="chat-quote__status chat-quote__status--ok">✅ Devis accepté</div>
+          )}
+          {msg.status === "refused" && (
+            <div className="chat-quote__status chat-quote__status--no">❌ Devis refusé</div>
+          )}
+        </div>
+      );
+    }
+
+    // Bulle texte normale
+    return (
+      <div key={msg.id} className={`chat-bubble ${isMe ? "chat-bubble--me" : "chat-bubble--them"}`}>
+        <div className="chat-bubble__text">{msg.text}</div>
+        <div className="chat-bubble__time">{formatTime(msg.createdAt)}</div>
+      </div>
+    );
+  };
 
   return (
     <div className="chat-screen">
@@ -100,26 +184,19 @@ export default function ChatScreen({ provider, clientName, onBack }) {
               <a href={`sms:${provider.phone}`}  className="chat-screen__action-btn">💬</a>
             </>
           )}
-          {/* Bouton noter — visible quand conversation active */}
           {showRateBtn && (
             <button
               className="chat-screen__action-btn chat-screen__action-btn--rate"
               onClick={() => setShowRating(true)}
-              title="Noter ce prestataire"
-            >
-              ⭐
-            </button>
+            >⭐</button>
           )}
         </div>
       </div>
 
-      {/* Bannière "noter" si éligible */}
+      {/* Bannière notation */}
       {showRateBtn && (
-        <button
-          className="chat-screen__rate-banner"
-          onClick={() => setShowRating(true)}
-        >
-          ⭐ La prestation s'est bien passée ? Laissez un avis à {provider?.name} →
+        <button className="chat-screen__rate-banner" onClick={() => setShowRating(true)}>
+          ⭐ La prestation s'est bien passée ? Laisser un avis →
         </button>
       )}
 
@@ -144,18 +221,15 @@ export default function ChatScreen({ provider, clientName, onBack }) {
             </p>
           </div>
         ) : (
-          messages.map((msg) => {
-            const isMe = msg.senderId === uid;
-            return (
-              <div key={msg.id} className={`chat-bubble ${isMe ? "chat-bubble--me" : "chat-bubble--them"}`}>
-                <div className="chat-bubble__text">{msg.text}</div>
-                <div className="chat-bubble__time">{formatTime(msg.createdAt)}</div>
-              </div>
-            );
-          })
+          messages.map(renderMessage)
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Erreur envoi */}
+      {sendError && (
+        <div className="chat-screen__send-error">{sendError}</div>
+      )}
 
       {/* Input */}
       <div className="chat-screen__input-row">
@@ -164,8 +238,8 @@ export default function ChatScreen({ provider, clientName, onBack }) {
           type="text"
           placeholder="Écrivez un message…"
           value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onChange={(e) => { setText(e.target.value); setSendError(""); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
           disabled={loading}
         />
         <button
@@ -173,11 +247,11 @@ export default function ChatScreen({ provider, clientName, onBack }) {
           onClick={handleSend}
           disabled={!text.trim() || sending || loading}
         >
-          ➤
+          {sending ? "…" : "➤"}
         </button>
       </div>
 
-      {/* Modal de notation */}
+      {/* Modal notation */}
       {showRating && (
         <RatingModal
           provider={provider}

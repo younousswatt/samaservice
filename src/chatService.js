@@ -5,17 +5,16 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-// ── Générer un chatId unique et stable ────────────────────────
-// Format : clientUid_providerUid (toujours dans cet ordre)
+// ── chatId stable : clientUid_providerUid ─────────────────────
 export function getChatId(clientId, providerId) {
   return `${clientId}_${providerId}`;
 }
 
 // ── Créer ou récupérer une conversation ───────────────────────
 export async function getOrCreateChat(clientId, clientName, providerId, providerName, providerPhone) {
-  const chatId = getChatId(clientId, providerId);
+  const chatId  = getChatId(clientId, providerId);
   const chatRef = doc(db, "chats", chatId);
-  const snap = await getDoc(chatRef);
+  const snap    = await getDoc(chatRef);
 
   if (!snap.exists()) {
     await setDoc(chatRef, {
@@ -23,84 +22,151 @@ export async function getOrCreateChat(clientId, clientName, providerId, provider
       clientName,
       providerId,
       providerName,
-      providerPhone: providerPhone || "",
-      lastMessage:   "",
-      lastAt:        serverTimestamp(),
-      unreadClient:  0,
+      providerPhone:  providerPhone || "",
+      lastMessage:    "",
+      lastAt:         serverTimestamp(),
+      unreadClient:   0,
       unreadProvider: 0,
-      createdAt:     serverTimestamp(),
+      createdAt:      serverTimestamp(),
     });
   }
   return chatId;
 }
 
-// ── Envoyer un message ────────────────────────────────────────
+// ── Envoyer un message texte ──────────────────────────────────
 export async function sendMessage(chatId, senderId, senderName, text, role) {
-  const msgRef = collection(db, "chats", chatId, "messages");
-  await addDoc(msgRef, {
-    text,
+  if (!chatId || !senderId || !text?.trim()) {
+    throw new Error("sendMessage: paramètres invalides");
+  }
+
+  // 1. Ajouter le message
+  const msgRef = await addDoc(collection(db, "chats", chatId, "messages"), {
+    type:      "text",
+    text:      text.trim(),
     senderId,
     senderName,
-    role,        // "client" | "provider"
-    createdAt:   serverTimestamp(),
+    role,
+    createdAt: serverTimestamp(),
   });
 
-  // Mettre à jour lastMessage + incrémenter unread de l'autre
-  const chatRef = doc(db, "chats", chatId);
-  await updateDoc(chatRef, {
+  // 2. Mettre à jour le chat
+  await updateDoc(doc(db, "chats", chatId), {
     lastMessage: text.length > 60 ? text.slice(0, 60) + "…" : text,
     lastAt:      serverTimestamp(),
-    // Incrémenter le compteur non-lu de l'autre partie
     ...(role === "client"
       ? { unreadProvider: increment(1) }
       : { unreadClient:   increment(1) }),
   });
+
+  return msgRef.id;
 }
 
-// ── Écouter les messages d'une conversation (temps réel) ──────
+// ── Envoyer un devis (prestataire → client) ───────────────────
+export async function sendQuote(chatId, providerId, providerName, { amount, description }) {
+  if (!chatId || !amount) throw new Error("sendQuote: paramètres invalides");
+
+  await addDoc(collection(db, "chats", chatId, "messages"), {
+    type:        "quote",
+    amount,
+    description: description || "",
+    status:      "pending",   // pending | accepted | refused
+    senderId:    providerId,
+    senderName:  providerName,
+    role:        "provider",
+    createdAt:   serverTimestamp(),
+  });
+
+  await updateDoc(doc(db, "chats", chatId), {
+    lastMessage:    `💰 Devis : ${amount.toLocaleString("fr-FR")} FCFA`,
+    lastAt:         serverTimestamp(),
+    unreadClient:   increment(1),
+  });
+}
+
+// ── Répondre à un devis (client) ──────────────────────────────
+export async function respondToQuote(chatId, messageId, response, clientId, clientName) {
+  // response : "accepted" | "refused"
+  const msgRef = doc(db, "chats", chatId, "messages", messageId);
+  await updateDoc(msgRef, { status: response });
+
+  // Message système pour confirmer
+  const label = response === "accepted" ? "✅ Devis accepté" : "❌ Devis refusé";
+  await addDoc(collection(db, "chats", chatId, "messages"), {
+    type:      "system",
+    text:      label,
+    senderId:  clientId,
+    senderName: clientName,
+    role:      "client",
+    createdAt: serverTimestamp(),
+  });
+
+  await updateDoc(doc(db, "chats", chatId), {
+    lastMessage:    label,
+    lastAt:         serverTimestamp(),
+    unreadProvider: increment(1),
+  });
+}
+
+// ── Écouter les messages en temps réel ────────────────────────
 export function listenMessages(chatId, callback) {
+  if (!chatId) return () => {};
+
   const q = query(
     collection(db, "chats", chatId, "messages"),
     orderBy("createdAt", "asc")
   );
-  return onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    callback(msgs);
-  });
+
+  return onSnapshot(q,
+    (snap) => {
+      const msgs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      callback(msgs);
+    },
+    (err) => {
+      console.error("listenMessages error:", err.code, err.message);
+    }
+  );
 }
 
 // ── Écouter les conversations d'un client ─────────────────────
 export function listenClientChats(clientId, callback) {
+  if (!clientId) return () => {};
+
   const q = query(
     collection(db, "chats"),
     where("clientId", "==", clientId),
     orderBy("lastAt", "desc")
   );
-  return onSnapshot(q, (snap) => {
-    const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    callback(chats);
-  });
+
+  return onSnapshot(q,
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err)  => console.error("listenClientChats error:", err.code, err.message)
+  );
 }
 
 // ── Écouter les conversations d'un prestataire ────────────────
 export function listenProviderChats(providerId, callback) {
+  if (!providerId) return () => {};
+
   const q = query(
     collection(db, "chats"),
     where("providerId", "==", providerId),
     orderBy("lastAt", "desc")
   );
-  return onSnapshot(q, (snap) => {
-    const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    callback(chats);
-  });
+
+  return onSnapshot(q,
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err)  => console.error("listenProviderChats error:", err.code, err.message)
+  );
 }
 
 // ── Marquer comme lu ──────────────────────────────────────────
 export async function markAsRead(chatId, role) {
-  const chatRef = doc(db, "chats", chatId);
-  await updateDoc(chatRef, {
-    ...(role === "client"
-      ? { unreadClient:   0 }
-      : { unreadProvider: 0 }),
-  });
+  if (!chatId) return;
+  try {
+    await updateDoc(doc(db, "chats", chatId), {
+      ...(role === "client"
+        ? { unreadClient:   0 }
+        : { unreadProvider: 0 }),
+    });
+  } catch {}
 }

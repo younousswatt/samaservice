@@ -321,3 +321,76 @@
   color: #D1D5DB;
   margin-top: 16px;
 }
+/* ── Avis reçus (profil prestataire) ─────────────── */
+.profile-page__revs-empty {
+  font-size: 0.84rem;
+  color: #9CA3AF;
+  font-style: italic;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.profile-page__review {
+  background: #F9FAFB;
+  border: 1px solid #F0F0F0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.profile-page__review-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.profile-page__review-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #1A2517;
+  color: #ACC8A2;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-page__review-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.profile-page__review-name { font-size: 0.85rem; font-weight: 600; color: #1A2517; }
+.profile-page__review-date { font-size: 0.72rem; color: #9CA3AF; }
+
+.profile-page__review-comment {
+  font-size: 0.83rem;
+  color: #4B5563;
+  line-height: 1.5;
+  font-style: italic;
+  margin: 0;
+  padding-left: 4px;
+  border-left: 2px solid #E5E7EB;
+}
+
+.profile-page__revs-more {
+  width: 100%;
+  background: none;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #6B7280;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  margin-top: 4px;
+  transition: background 0.15s;
+}
+
+.profile-page__revs-more:hover { background: #F5F7F4; }
