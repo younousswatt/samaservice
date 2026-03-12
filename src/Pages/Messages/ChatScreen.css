@@ -253,3 +253,37 @@
   color: #9CA3AF;
   cursor: not-allowed;
 }
+/* ── Bouton noter dans header ─────────────────────── */
+.chat-screen__action-btn--rate {
+  background: rgba(212,168,83,0.2);
+  border: 1px solid rgba(212,168,83,0.4);
+  color: #D4A853;
+  font-size: 1rem;
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Bannière "noter" ─────────────────────────────── */
+.chat-screen__rate-banner {
+  width: 100%;
+  background: linear-gradient(135deg, #FEF9EC, #FEF3C7);
+  border: none;
+  border-bottom: 1px solid #F59E0B22;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #92400E;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  flex-shrink: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.chat-screen__rate-banner:hover {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+}

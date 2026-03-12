@@ -4,14 +4,18 @@ import {
   getOrCreateChat, sendMessage,
   listenMessages, markAsRead,
 } from "../../chatService";
+import { hasAlreadyReviewed } from "../../reviewService";
+import RatingModal from "./RatingModal";
 import "./ChatScreen.css";
 
 export default function ChatScreen({ provider, clientName, onBack }) {
-  const [chatId,   setChatId]   = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [text,     setText]     = useState("");
-  const [sending,  setSending]  = useState(false);
-  const [loading,  setLoading]  = useState(true);
+  const [chatId,      setChatId]      = useState(null);
+  const [messages,    setMessages]    = useState([]);
+  const [text,        setText]        = useState("");
+  const [sending,     setSending]     = useState(false);
+  const [loading,     setLoading]     = useState(true);
+  const [showRating,  setShowRating]  = useState(false);
+  const [canRate,     setCanRate]     = useState(false);
   const bottomRef = useRef(null);
 
   const uid = auth.currentUser?.uid;
@@ -27,6 +31,9 @@ export default function ChatScreen({ provider, clientName, onBack }) {
         provider.phone || ""
       );
       setChatId(id);
+      // Vérifier si déjà noté
+      const already = await hasAlreadyReviewed(uid, provider.id);
+      setCanRate(!already);
     } catch {}
     setLoading(false);
   }, [uid, provider?.id, provider?.name, provider?.phone, clientName]);
@@ -63,6 +70,10 @@ export default function ChatScreen({ provider, clientName, onBack }) {
     return ts.toDate().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Vérifier si le prestataire a répondu (messages des deux côtés)
+  const providerReplied = messages.some((m) => m.senderId === provider?.id);
+  const showRateBtn = canRate && providerReplied && messages.length >= 2;
+
   return (
     <div className="chat-screen">
 
@@ -89,8 +100,28 @@ export default function ChatScreen({ provider, clientName, onBack }) {
               <a href={`sms:${provider.phone}`}  className="chat-screen__action-btn">💬</a>
             </>
           )}
+          {/* Bouton noter — visible quand conversation active */}
+          {showRateBtn && (
+            <button
+              className="chat-screen__action-btn chat-screen__action-btn--rate"
+              onClick={() => setShowRating(true)}
+              title="Noter ce prestataire"
+            >
+              ⭐
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Bannière "noter" si éligible */}
+      {showRateBtn && (
+        <button
+          className="chat-screen__rate-banner"
+          onClick={() => setShowRating(true)}
+        >
+          ⭐ La prestation s'est bien passée ? Laissez un avis à {provider?.name} →
+        </button>
+      )}
 
       {/* Messages */}
       <div className="chat-screen__messages">
@@ -145,6 +176,16 @@ export default function ChatScreen({ provider, clientName, onBack }) {
           ➤
         </button>
       </div>
+
+      {/* Modal de notation */}
+      {showRating && (
+        <RatingModal
+          provider={provider}
+          clientName={clientName}
+          onClose={() => setShowRating(false)}
+          onSubmitted={() => setCanRate(false)}
+        />
+      )}
     </div>
   );
 }
