@@ -9,6 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
 }
 
 .client-profile__spinner {
@@ -21,10 +22,10 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Hero */
+/* ── Hero ─────────────────────────────────────────── */
 .client-profile__hero {
   background: linear-gradient(160deg, #1A2517, #2C3E28);
-  padding: 48px 20px 28px;
+  padding: 52px 20px 28px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,7 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid rgba(172,200,162,0.4);
+  border: 3px solid rgba(172,200,162,0.3);
 }
 
 .client-profile__name {
@@ -62,10 +63,23 @@
   border: 1px solid rgba(172,200,162,0.3);
 }
 
-/* Body */
+/* ── Body ─────────────────────────────────────────── */
 .client-profile__body {
   padding: 0 16px;
 }
+
+/* Message succès/erreur */
+.client-profile__msg {
+  margin: 14px 0 4px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.client-profile__msg--ok  { background: #ECFDF5; color: #047857; }
+.client-profile__msg--err { background: #FEF2F2; color: #DC2626; }
 
 .client-profile__section-title {
   font-size: 0.75rem;
@@ -80,8 +94,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #E5E7EB;
+  padding: 13px 0;
+  border-bottom: 1px solid #F0F0F0;
 }
 
 .client-profile__field-label {
@@ -94,12 +108,13 @@
   font-weight: 600;
   color: #1A2517;
   text-align: right;
+  max-width: 60%;
 }
 
 .client-profile__divider {
   height: 1px;
   background: #E5E7EB;
-  margin: 16px 0;
+  margin: 8px 0;
 }
 
 /* Menu items */
@@ -107,17 +122,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 13px 0;
-  border-bottom: 1px solid #F5F7F4;
+  padding: 14px 0;
+  border-bottom: 1px solid #F0F0F0;
   font-size: 0.9rem;
   color: #1A2517;
   cursor: pointer;
 }
 
-.client-profile__menu-item:hover { background: #F9FAFB; }
-.client-profile__menu-arrow { color: #D1D5DB; font-size: 1.1rem; }
+.client-profile__menu-arrow {
+  color: #D1D5DB;
+  font-size: 1.2rem;
+}
 
-/* Boutons */
+/* ── Boutons ──────────────────────────────────────── */
 .client-profile__btn-edit {
   width: 100%;
   padding: 14px;
@@ -131,6 +148,11 @@
   font-family: 'DM Sans', sans-serif;
   margin-top: 12px;
   margin-bottom: 8px;
+  transition: background 0.15s;
+}
+
+.client-profile__btn-edit:hover {
+  background: #E8EDE7;
 }
 
 .client-profile__btn-logout {
@@ -146,9 +168,90 @@
   font-family: 'DM Sans', sans-serif;
 }
 
+/* ── Mode édition ─────────────────────────────────── */
+.client-profile__edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.client-profile__edit-label {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.client-profile__edit-input {
+  padding: 13px 14px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-family: 'DM Sans', sans-serif;
+  color: #1A2517;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.client-profile__edit-input:focus {
+  border-color: #ACC8A2;
+}
+
+.client-profile__edit-input--disabled {
+  background: #F5F7F4;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.client-profile__edit-hint {
+  font-size: 0.76rem;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+.client-profile__edit-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.client-profile__btn-save {
+  width: 100%;
+  padding: 14px;
+  background: #1A2517;
+  color: #ACC8A2;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: opacity 0.15s;
+}
+
+.client-profile__btn-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.client-profile__btn-cancel {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  color: #6B7280;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
 .client-profile__version {
   text-align: center;
   font-size: 0.75rem;
   color: #D1D5DB;
-  margin-top: 20px;
+  margin-top: 24px;
 }

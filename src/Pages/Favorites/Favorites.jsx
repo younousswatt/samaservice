@@ -1,9 +1,33 @@
-import "./Favorites.css";
+import { useState, useEffect } from "react";
+import { getAllProviders } from "../../firestoreService";
 import ProviderCard from "../../Components/ProviderCard/ProviderCard";
-import { PROVIDERS } from "../Home/Home";
+import "./Favorites.css";
 
 export default function Favorites({ favorites, onFavToggle, onProviderClick }) {
-  const favProviders = PROVIDERS.filter((p) => favorites.includes(p.id));
+  const [providers, setProviders] = useState([]);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(() => {
+    getAllProviders()
+      .then((data) => { setProviders(data); setLoading(false); })
+      .catch(()    => { setLoading(false); });
+  }, []);
+
+  const favProviders = providers.filter((p) => favorites.includes(p.id));
+
+  if (loading) {
+    return (
+      <div className="favorites">
+        <div className="favorites__header">
+          <div className="favorites__title">Mes Favoris ❤️</div>
+        </div>
+        <div className="favorites__loading">
+          <div className="favorites__spinner" />
+          <span>Chargement…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="favorites">
